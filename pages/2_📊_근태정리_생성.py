@@ -1,8 +1,9 @@
-"""근태정리 생성 — 파일 업로드 → 처리 → 다운로드"""
+"""근태현황 생성 — 파일 업로드 → 처리 → 다운로드"""
 import streamlit as st
 import pandas as pd
 import json
 import sys
+import calendar
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
@@ -87,18 +88,18 @@ with col3:
 # ============================================================
 # Step 3: 기간 선택
 # ============================================================
-st.subheader("📅 Step 3. 처리 기간")
+st.subheader("📅 Step 3. 처리 월 (달력 한 달 전체)")
 
-col1, col2 = st.columns([1, 2])
+col1, col2, col3 = st.columns([1, 1, 2])
 with col1:
-    period_start = st.date_input(
-        "4주차 시작일",
-        value=date(2026, 3, 30),
-        help="이 날짜부터 4주(28일) 처리"
-    )
+    sel_year = int(st.number_input("연도", min_value=2024, max_value=2035, value=2026, step=1))
 with col2:
-    end_date = period_start + timedelta(days=27)
-    st.metric("종료일 (자동 계산)", end_date.strftime('%Y-%m-%d'))
+    sel_month = int(st.selectbox("월", list(range(1, 13)), index=4,
+                                 format_func=lambda m: f"{m}월"))
+with col3:
+    _ndays = calendar.monthrange(sel_year, sel_month)[1]
+    st.metric("처리 기간 (자동)",
+              f"{sel_year}-{sel_month:02d}-01 ~ {sel_year}-{sel_month:02d}-{_ndays:02d}")
 
 # ============================================================
 # Step 4: 생성 버튼
@@ -131,7 +132,7 @@ if st.button("🚀 근태정리 생성", type="primary", use_container_width=Tru
                     df3['날짜'] = pd.to_datetime(df3['날짜'], errors='coerce')
 
                 # 빌드
-                output_name = f'근태정리_{period_start.strftime("%Y-%m-%d")}.xlsx'
+                output_name = f'근태현황_{sel_year}-{sel_month:02d}.xlsx'
                 output_path = OUTPUT_DIR / output_name
 
                 result = build_excel(
@@ -140,7 +141,7 @@ if st.button("🚀 근태정리 생성", type="primary", use_container_width=Tru
                     erp_switchers=erp_switchers,
                     contract_map=contract_map,
                     df1=df1, df2=df2, df3=df3,
-                    period_start=period_start,
+                    year=sel_year, month=sel_month,
                     output_path=output_path,
                     dept_map=dept_map,
                     erp_source_file=file3.name if file3 else '',
@@ -149,7 +150,7 @@ if st.button("🚀 근태정리 생성", type="primary", use_container_width=Tru
                 # 이력 저장
                 history_entry = {
                     'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'period': f'{period_start} ~ {end_date}',
+                    'period': result.get('period_label', f'{sel_year}-{sel_month:02d}'),
                     'num_people': result['num_people'],
                     'output_file': output_name,
                     'status': '✅ 성공' if not result['issues'] else f'⚠ 경고 {len(result["warnings"])}건',
@@ -169,7 +170,7 @@ if st.button("🚀 근태정리 생성", type="primary", use_container_width=Tru
                     'num_people': result['num_people'],
                 }
 
-                st.success(f"✅ 근태정리 생성 완료! ({result['num_people']}명, 4주차: {', '.join(result['weeks'])})")
+                st.success(f"✅ 근태현황 생성 완료! ({result['num_people']}명 · {result.get('period_label','')})")
 
                 # 검증 결과
                 if result['issues']:
