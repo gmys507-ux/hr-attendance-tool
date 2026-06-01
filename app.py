@@ -1,5 +1,5 @@
 """
-HR 근태정리 자동화 도구 — 메인 페이지
+월간 근태현황 분석 자동화 도구 — 메인 페이지
 이삼오구 HR팀 전용 / 매월 파견직·계약직 근태 정리 자동화
 """
 import streamlit as st
@@ -10,7 +10,7 @@ from datetime import datetime
 
 # Page config
 st.set_page_config(
-    page_title="HR 근태정리 자동화",
+    page_title="월간 근태현황 분석 자동화",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -65,7 +65,7 @@ DATA_DIR.mkdir(exist_ok=True)
 from lib.config_store import load_config, storage_mode
 
 # ====== Sidebar ======
-st.sidebar.title("📊 HR 근태정리")
+st.sidebar.title("📊 월간 근태현황 분석")
 st.sidebar.caption("이삼오구 HR팀 자동화")
 st.sidebar.markdown("---")
 st.sidebar.info("👈 좌측 메뉴에서 작업 선택")
@@ -74,8 +74,8 @@ st.sidebar.caption(f"🗄 명단 저장: {storage_mode()}")
 # ====== Main Header ======
 st.markdown("""
 <div class="main-header">
-    <h1>HR 근태정리 자동화 도구</h1>
-    <p>파견직·계약직 매월 4주 근태 자동 정리 · 인원 관리 · 검증 리포트</p>
+    <h1>월간 근태현황 분석 자동화 도구</h1>
+    <p>파견직·계약직 매월 4주 근태현황 분석 · 인원 관리 · 검증 리포트</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -162,4 +162,4 @@ else:
 
 # ====== Footer ======
 st.markdown("---")
-st.caption(f"이삼오구 HR 근태정리 자동화 도구 v1.0 · {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+st.caption(f"이삼오구 월간 근태현황 분석 자동화 도구 v1.0 · {datetime.now().strftime('%Y-%m-%d %H:%M')}")

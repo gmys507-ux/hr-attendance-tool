@@ -5,6 +5,7 @@ data/app_config.json
 
 # 직원 개인정보 (명단·계획문서) — 저장소에 두지 않음
 data/people.json
+data/streamlit_secrets.toml
 01_CONTEXT.md
 02_PRD.md
 
