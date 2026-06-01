@@ -5,8 +5,14 @@
 개인별 로그인 계정은 추후 확장.
 """
 import json
+import unicodedata
 from pathlib import Path
 import streamlit as st
+
+
+def _norm(s):
+    """한글 비밀번호 비교용: NFC 정규화 + 공백 제거 (입력/저장본 코드 차이 흡수)"""
+    return unicodedata.normalize("NFC", str(s)).strip()
 
 CONFIG = Path(__file__).parent.parent / "data" / "app_config.json"
 
@@ -39,7 +45,7 @@ def require_login():
         entered = st.text_input("비밀번호", type="password")
         submitted = st.form_submit_button("입장", type="primary")
     if submitted:
-        if entered == pw:
+        if _norm(entered) == _norm(pw):
             st.session_state["_authed"] = True
             st.rerun()
         else:
