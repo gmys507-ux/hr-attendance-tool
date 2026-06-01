@@ -45,6 +45,31 @@ def to_min(v):
     return 0
 
 
+def classify_file(df):
+    """업로드 파일을 컬럼 내용으로 자동 분류.
+    반환: 'flex' | 'daily'(일자상세) | 'weekly'(주차집계) | 'unknown'"""
+    cols = [str(c) for c in df.columns]
+    colset = set(cols)
+    # FLEX: '총 근무' + '날짜' 보유
+    if '총 근무' in colset and '날짜' in colset:
+        return 'flex'
+    # 원티드 일자상세: 요일별 'X_근무시간' 컬럼 보유 (예: 월_근무시간)
+    if any(c.endswith('_근무시간') for c in cols):
+        return 'daily'
+    # 원티드 주차집계: 기간/기록근무 컬럼
+    if '기간(시작)' in colset or '기록근무시간(분)' in colset or '기록근무시간(시간)' in colset:
+        return 'weekly'
+    # 폴백: 컬럼 수 기준
+    n = len(cols)
+    if n >= 60:
+        return 'daily'
+    if '총 근무' in colset:
+        return 'flex'
+    if n <= 20:
+        return 'weekly'
+    return 'unknown'
+
+
 def get_person_rows(df, name):
     """WORKING 우선, 없으면 ABSENCE도 사용"""
     sub_all = df[df['Name'] == name]

@@ -69,21 +69,13 @@ with st.expander(f"👥 Step 1. 대상 인원 확인 (현재 활성 {len(targets
 # ============================================================
 # Step 2: 파일 업로드
 # ============================================================
-st.subheader("📁 Step 2. 원본 파일 업로드")
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("**① 원티드 주차 집계**")
-    st.caption("이삼오구_YYYY-MM-DD-...xlsx (16컬럼)")
-    file1 = st.file_uploader("원티드 주차", type=['xlsx'], key='f1', label_visibility='collapsed')
-with col2:
-    st.markdown("**② 원티드 일자 상세**")
-    st.caption("이삼오구_..._EI*.xlsx (87컬럼)")
-    file2 = st.file_uploader("원티드 일자", type=['xlsx'], key='f2', label_visibility='collapsed')
-with col3:
-    st.markdown("**③ FLEX 일자 리포트** (선택)")
-    st.caption("전체_일별_근태기록리포트_*.xlsx")
-    file3 = st.file_uploader("FLEX (없으면 생략)", type=['xlsx'], key='f3', label_visibility='collapsed')
+st.subheader("📁 Step 2. 원본 파일 업로드 (순서 무관)")
+st.caption("원티드 **일자상세**(필수) + FLEX(선택) + 주차집계(선택)를 **한 번에** 올리세요. "
+           "어느 파일이 무엇인지 도구가 **자동으로 인식**합니다 — 칸·순서 신경 안 쓰셔도 됩니다.")
+uploaded_files = st.file_uploader(
+    "엑셀 파일들을 한꺼번에 드래그해서 올리세요 (.xlsx)",
+    type=['xlsx'], accept_multiple_files=True
+)
 
 # ============================================================
 # Step 3: 기간 선택
@@ -106,30 +98,40 @@ with col3:
 # ============================================================
 st.subheader("⚙️ Step 4. 생성")
 
-if st.button("🚀 근태정리 생성", type="primary", use_container_width=True):
-    if not file1 or not file2:
-        st.error("❌ 원티드 주차 + 일자 상세 파일은 필수입니다.")
+if st.button("🚀 근태현황 생성", type="primary", use_container_width=True):
+    if not uploaded_files:
+        st.error("❌ 파일을 업로드하세요. (원티드 일자상세는 필수)")
     else:
         with st.spinner("처리 중... (10~30초 소요)"):
             try:
-                # 파일 임시 저장
+                from lib.attendance_builder import classify_file
                 ts = datetime.now().strftime('%Y%m%d_%H%M%S')
-                f1_path = UPLOAD_DIR / f'wonted_weekly_{ts}.xlsx'
-                f2_path = UPLOAD_DIR / f'wonted_daily_{ts}.xlsx'
-                f3_path = UPLOAD_DIR / f'flex_{ts}.xlsx' if file3 else None
 
-                with open(f1_path, 'wb') as f: f.write(file1.read())
-                with open(f2_path, 'wb') as f: f.write(file2.read())
-                if file3:
-                    with open(f3_path, 'wb') as f: f.write(file3.read())
+                # 업로드 파일 자동 분류
+                df1 = df2 = df3 = None
+                flex_name = ''
+                detected = []
+                for uf in uploaded_files:
+                    d = pd.read_excel(uf, header=0)
+                    kind = classify_file(d)
+                    if kind == 'daily':
+                        df2 = d; detected.append(f"✅ `{uf.name}` → 원티드 일자상세")
+                    elif kind == 'flex':
+                        d['날짜'] = pd.to_datetime(d['날짜'], errors='coerce')
+                        df3 = d; flex_name = uf.name
+                        detected.append(f"✅ `{uf.name}` → FLEX 일자 리포트")
+                    elif kind == 'weekly':
+                        df1 = d; detected.append(f"☑ `{uf.name}` → 원티드 주차집계 (참고용)")
+                    else:
+                        detected.append(f"❓ `{uf.name}` → 인식 실패 (무시됨)")
 
-                # 데이터 로드
-                df1 = pd.read_excel(f1_path, header=0)
-                df2 = pd.read_excel(f2_path, header=0)
-                df3 = None
-                if f3_path:
-                    df3 = pd.read_excel(f3_path, header=0)
-                    df3['날짜'] = pd.to_datetime(df3['날짜'], errors='coerce')
+                st.markdown("**📂 인식 결과**")
+                for line in detected:
+                    st.markdown("- " + line)
+
+                if df2 is None:
+                    raise ValueError("원티드 '일자상세' 파일(요일별 근무시간 포함)을 찾지 못했습니다. "
+                                     "해당 파일을 업로드했는지 확인하세요.")
 
                 # 빌드
                 output_name = f'근태현황_{sel_year}-{sel_month:02d}.xlsx'
@@ -144,7 +146,7 @@ if st.button("🚀 근태정리 생성", type="primary", use_container_width=Tru
                     year=sel_year, month=sel_month,
                     output_path=output_path,
                     dept_map=dept_map,
-                    erp_source_file=file3.name if file3 else '',
+                    erp_source_file=flex_name,
                 )
 
                 # 이력 저장
