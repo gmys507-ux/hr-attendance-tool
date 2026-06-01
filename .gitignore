@@ -1,0 +1,28 @@
+# 비밀/민감 정보 (절대 커밋 금지)
+data/gcp_service_account.json
+data/app_config.json
+*.json.key
+
+# 직원 개인정보 (명단·계획문서) — 저장소에 두지 않음
+data/people.json
+01_CONTEXT.md
+02_PRD.md
+
+# 로컬 산출물/업로드 (개인정보 포함)
+outputs/
+uploads/
+docs/raw/
+data/backup/
+data/history/
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.log
+_st*.log
+
+# OS
+Thumbs.db
+.DS_Store
