@@ -8,6 +8,7 @@ data/people.json
 data/streamlit_secrets.toml
 01_CONTEXT.md
 02_PRD.md
+교육세션/
 
 # 로컬 산출물/업로드 (개인정보 포함)
 outputs/
