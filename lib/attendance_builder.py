@@ -78,13 +78,15 @@ def get_person_rows(df, name):
 
 
 def calc_weeks(year, month):
-    """달력 한 달을 7일 구간으로 분할. 4~5개 주차 반환."""
+    """달력 한 달을 실제 주차(월~일)로 분할. 1주차는 1일~첫 일요일(부분 주).
+    예: 2026-05(1일=금) → 1주차 5/1~5/3, 2주차 5/4~5/10 … 5주차 5/25~5/31."""
     ndays = calendar.monthrange(year, month)[1]
-    nweeks = (ndays - 1) // 7 + 1
+    first_wd = pd.Timestamp(year, month, 1).weekday()   # 월=0 … 일=6
+    nweeks = (ndays - 1 + first_wd) // 7 + 1
     weeks = []
     for i in range(nweeks):
-        d_start = i * 7 + 1
-        d_end = min((i + 1) * 7, ndays)
+        d_start = 1 if i == 0 else i * 7 - first_wd + 1
+        d_end = min((i + 1) * 7 - first_wd, ndays)
         weeks.append({
             'name': f'{month}월 {i + 1}주차',
             'range': f'{month}/{d_start}~{month}/{d_end}',
@@ -103,6 +105,7 @@ def _source_label(sources):
 def build_daily_data(targets, dept_map, erp_switchers, df1, df2, df3, year, month):
     """각 인원의 그 달 모든 날짜(1일~말일) 일자별 데이터."""
     ndays = calendar.monthrange(year, month)[1]
+    first_wd = pd.Timestamp(year, month, 1).weekday()   # 월=0 … 일=6 (주차 계산용)
     all_daily = {}
     for name in targets:
         daily = []
@@ -118,7 +121,7 @@ def build_daily_data(targets, dept_map, erp_switchers, df1, df2, df3, year, mont
             cur_date = pd.Timestamp(year, month, day)
             wd = cur_date.weekday()              # 0=월
             short = DAYS_SHORT[wd]
-            week_idx = (day - 1) // 7
+            week_idx = (day - 1 + first_wd) // 7   # 실제 주차(월~일), 1주차=1일~첫 일요일
             week_name = f'{month}월 {week_idx + 1}주차'
             use_erp = False
 
