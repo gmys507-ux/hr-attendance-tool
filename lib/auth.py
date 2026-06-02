@@ -39,7 +39,7 @@ def require_login():
     if st.session_state.get("_authed"):
         return
 
-    st.markdown("## 🔒 월간 근태현황 분석 자동화 도구")
+    st.markdown("## 🔒 월간 근태 취합 자동화 도구")
     st.caption("HR팀 전용 · 접속 비밀번호를 입력하세요.")
     with st.form("login_form"):
         entered = st.text_input("비밀번호", type="password")
